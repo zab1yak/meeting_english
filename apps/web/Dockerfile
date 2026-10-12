@@ -5,7 +5,8 @@ RUN corepack enable
 WORKDIR /repo
 
 FROM base AS build
-COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+# package.json нужен corepack: из него берётся версия pnpm (packageManager)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm fetch
 COPY . .
 RUN pnpm install --offline --frozen-lockfile

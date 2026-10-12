@@ -1,0 +1,15 @@
+// Полная схема появится в задаче 3 (User, Course, Lesson, Block, ...).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Заглушка: Prisma не генерирует клиент без моделей. Удаляется в задаче 3.
+model SchemaPlaceholder {
+  id Int @id @default(autoincrement())
+}

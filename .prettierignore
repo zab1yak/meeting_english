@@ -3,3 +3,5 @@ packages/db/src/generated/
 .next/
 dist/
 coverage/
+# Сгенерированные HTML-макеты (источник — design/mockups/src/build.mjs)
+design/mockups/*.html

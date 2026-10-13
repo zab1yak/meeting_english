@@ -1,0 +1,106 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Состояния — Meeting English</title><link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><style>
+:root{--color-bg:#F6F7F8;--color-surface:#FFFFFF;--color-text:#20212B;--color-muted-text:#696C60;--color-muted-icon:#73766A;
+--color-primary:#2D4354;--color-primary-hover:#233645;--color-on-primary:#FFFFFF;--color-primary-tint:#EAEEF1;--color-accent:#9E6752;--color-highlight:#FED7A5;
+--color-dark:#534145;--color-success:#1F7A3A;--color-success-tint:#EAF4EC;--color-error:#B42318;--color-error-tint:#FBEDEB;
+--color-border:#E3E5E8;--color-border-strong:#8C8F95}
+*{box-sizing:border-box;margin:0}
+body{font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:24px;color:var(--color-text);background:var(--color-bg);-webkit-font-smoothing:antialiased}
+.ic{flex:none;display:block}
+h1{font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.5px}
+h2{font-size:24px;line-height:32px;font-weight:600;letter-spacing:-.3px}
+h3{font-size:18px;line-height:26px;font-weight:600}
+.cap{font-size:13px;line-height:18px;color:var(--color-muted-text)}
+.lbl{font-size:14px;line-height:20px;font-weight:500}
+.muted{color:var(--color-muted-text)}
+.strong{font-weight:500}
+.row{display:flex;align-items:center;gap:12px}.col{display:flex;flex-direction:column}
+.between{justify-content:space-between}.grow{flex:1;min-width:0}
+.topbar{height:64px;background:var(--color-primary);color:var(--color-on-primary);display:flex;align-items:center;justify-content:space-between;padding:0 32px}
+.brand{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:600}
+.shell{display:grid;grid-template-columns:264px 1fr;min-height:calc(100vh - 64px)}
+.side{background:var(--color-surface);border-right:1px solid var(--color-border);padding:24px 16px;display:flex;flex-direction:column;gap:4px}
+.nav{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:6px;color:var(--color-text);white-space:nowrap}
+.nav.on{background:var(--color-primary-tint);color:var(--color-primary);font-weight:500}
+.side .sp{flex:1}
+.main{padding:32px 40px;display:flex;flex-direction:column;gap:24px;min-width:0}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;padding:24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:6px;font-size:14px;line-height:20px;font-weight:500;border:1px solid transparent;white-space:nowrap;font-family:inherit}
+.btn.p{background:var(--color-primary);color:var(--color-on-primary)}
+.btn.s{background:var(--color-surface);color:var(--color-primary);border-color:var(--color-border-strong)}
+.btn.g{background:transparent;color:var(--color-primary)}
+.btn.sm{height:32px;padding:0 12px}
+.btn{cursor:pointer;transition:background-color .15s,border-color .15s}
+.btn.p:hover,.btn.p.is-hover{background:var(--color-primary-hover)}
+.btn.s:hover,.btn.s.is-hover,.btn.g:hover,.btn.g.is-hover{background:var(--color-primary-tint)}
+.btn:disabled,.btn.is-disabled{background:var(--color-bg);color:var(--color-muted-text);border-color:var(--color-border);cursor:not-allowed}
+.btn.g:disabled,.btn.g.is-disabled{background:transparent;border-color:transparent}
+:focus-visible,.is-focus{outline:2px solid var(--color-primary);outline-offset:2px}
+.topbar :focus-visible,.topbar .is-focus{outline-color:var(--color-on-primary)}
+.inp:hover,.inp.is-hover{border-color:var(--color-muted-text)}
+.inp.is-disabled{background:var(--color-bg);border-color:var(--color-border);color:var(--color-muted-text)}
+.inp.is-error{border-color:var(--color-error)}
+.chip:hover,.chip.is-hover{background:var(--color-primary-tint)}
+.chip.on{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-on-primary)}
+.ptrack{width:240px;height:6px;border-radius:3px;background:var(--color-border-strong);overflow:hidden}.ptrack .bar{background:var(--color-on-primary)}
+.ibtn{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px}
+.badge{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:13px;line-height:18px;white-space:nowrap}
+.b-as{background:var(--color-primary-tint);color:var(--color-primary)}.b-sub{background:var(--color-highlight);color:var(--color-text)}
+.b-ok{background:var(--color-success-tint);color:var(--color-success)}.b-late{background:var(--color-error-tint);color:var(--color-error)}
+.av{width:32px;height:32px;border-radius:999px;background:var(--color-primary-tint);color:var(--color-primary);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none}
+.av.m{width:40px;height:40px;font-size:14px}
+.tabs{display:flex;border-bottom:1px solid var(--color-border);gap:4px}
+.tab{padding:12px 16px;color:var(--color-muted-text);white-space:nowrap}.tab.on{color:var(--color-primary);font-weight:500;box-shadow:inset 0 -2px 0 var(--color-primary)}
+.field{display:flex;flex-direction:column;gap:4px}
+.inp{height:40px;border:1px solid var(--color-border-strong);border-radius:6px;background:var(--color-surface);padding:0 12px;display:flex;align-items:center;gap:8px;color:var(--color-text)}
+.inp.ph{color:var(--color-muted-text)}.inp.focus{border:2px solid var(--color-primary);padding:0 11px}
+textarea.inp{height:auto;padding:10px 12px;font:inherit;resize:none;width:100%}
+.cell{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 10px;border-radius:4px;font-weight:500;vertical-align:middle;margin:0 2px;line-height:20px}
+.c-empty,.c-sel.empty{min-width:96px}.c-empty{border:1px dashed var(--color-border-strong);background:var(--color-surface)}
+.c-sel{border:2px solid var(--color-primary);background:var(--color-primary-tint);color:var(--color-primary)}
+.c-ok{border:1px solid var(--color-success);background:var(--color-success-tint)}
+.c-bad{border:1px solid var(--color-error);background:var(--color-error-tint)}
+.chip{display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--color-border-strong);border-radius:6px;background:var(--color-surface);font-weight:500}
+.chip.used{color:var(--color-muted-text);border-style:dashed;background:var(--color-bg)}
+.track{height:6px;background:var(--color-border);border-radius:3px;overflow:hidden}.bar{height:100%;background:var(--color-primary)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:13px;line-height:18px;font-weight:500;color:var(--color-muted-text);padding:0 12px 12px}
+td{padding:14px 12px;border-top:1px solid var(--color-border);vertical-align:middle}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat b{font-size:32px;line-height:40px;font-weight:600}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.g2{display:grid;grid-template-columns:1.6fr 1fr;gap:24px;align-items:start}
+.hl{background:var(--color-highlight);border-radius:6px;padding:12px 16px}
+.dot{width:8px;height:8px;border-radius:999px;background:var(--color-success);flex:none}
+.sec-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.divider{height:1px;background:var(--color-border)}
+.switch{width:40px;height:24px;border-radius:999px;background:var(--color-primary);position:relative;flex:none}
+.switch::after{content:'';position:absolute;right:3px;top:3px;width:18px;height:18px;border-radius:999px;background:var(--color-on-primary)}
+.switch.off{background:var(--color-border-strong)}.switch.off::after{right:auto;left:3px}
+.switch.inv{background:var(--color-on-primary)}.switch.inv::after{background:var(--color-primary)}
+.block{border:1px solid var(--color-border);border-radius:8px;padding:20px;background:var(--color-surface)}
+.block.sel{border:2px solid var(--color-primary);padding:19px}
+.text-gaps{font-size:18px;line-height:44px}
+@media (max-width:900px){
+ .shell{grid-template-columns:72px 1fr}.side{padding:16px 12px;align-items:center}.nav{width:48px;justify-content:center;padding:0}.nav span{display:none}
+ .main{padding:24px}.grid3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.topbar{padding:0 24px}.hide-t{display:none!important}.ptrack{width:120px}
+}
+@media (max-width:480px){
+ .topbar{padding:0 12px}.player-main{padding:24px 16px!important;gap:16px!important}.player-main h1{font-size:24px;line-height:32px}
+ .player-card{padding:20px!important}.text-gaps{font-size:17px;line-height:42px}.ptrack{width:72px}
+ .player-actions{flex-direction:column-reverse;align-items:stretch!important;gap:8px}.player-actions .row{flex-direction:column-reverse;align-items:stretch;gap:8px}.player-actions .btn{width:100%}
+}</style></head><body><main style="max-width:1200px;margin:0 auto;padding:40px;display:flex;flex-direction:column;gap:24px">
+<div class="col" style="gap:8px"><h1>Состояния элементов</h1><p class="muted">Hover — тинт primary-tint или primary-hover. Focus-visible — кольцо 2px primary с отступом 2px (на тёмной шапке — белое). Disabled — фон bg, граница border, текст muted-text (5.0:1), без прозрачности.</p></div>
+<div class="card col" style="gap:32px">
+<div class="col" style="gap:12px"><span class="lbl">Button / Primary</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Default</span><button class="btn p"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-on-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>Добавить блок</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Hover</span><button class="btn p is-hover"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-on-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>Добавить блок</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><button class="btn p is-focus"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-on-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>Добавить блок</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Disabled</span><button class="btn p is-disabled"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-icon)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>Добавить блок</button></div></div></div>
+<div class="col" style="gap:12px"><span class="lbl">Button / Secondary</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Default</span><button class="btn s">Открыть урок</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Hover</span><button class="btn s is-hover">Открыть урок</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><button class="btn s is-focus">Открыть урок</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Disabled</span><button class="btn s is-disabled">Открыть урок</button></div></div></div>
+<div class="col" style="gap:12px"><span class="lbl">Button / Ghost</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Default</span><button class="btn g">Пропустить</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Hover</span><button class="btn g is-hover">Пропустить</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><button class="btn g is-focus">Пропустить</button></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Disabled</span><button class="btn g is-disabled">Пропустить</button></div></div></div>
+<div class="col" style="gap:12px"><span class="lbl">Кнопка-иконка (aria-label обязателен)</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Default</span><span class="ibtn btn g" style="padding:0"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Закрыть"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Hover</span><span class="ibtn btn g is-hover" style="padding:0"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Закрыть"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><span class="ibtn btn g is-focus" style="padding:0"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Закрыть"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Disabled</span><span class="ibtn btn g is-disabled" style="padding:0"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted-icon)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Закрыть"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></span></div></div></div>
+<div class="divider"></div>
+<div class="col" style="gap:12px"><span class="lbl">Input</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Default</span><div class="field" style="width:220px"><span class="lbl">Электронная почта</span><div class="inp">name@school.ru</div><span class="cap">Подсказка</span></div></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Hover</span><div class="field" style="width:220px"><span class="lbl">Электронная почта</span><div class="inp is-hover">name@school.ru</div><span class="cap">Подсказка</span></div></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><div class="field" style="width:220px"><span class="lbl">Электронная почта</span><div class="inp is-focus">name@school.ru</div><span class="cap">Подсказка</span></div></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Disabled</span><div class="field" style="width:220px"><span class="lbl" style="color:var(--color-muted-text)">Электронная почта</span><div class="inp is-disabled">name@school.ru</div><span class="cap">Подсказка</span></div></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Error</span><div class="field" style="width:220px"><span class="lbl">Электронная почта</span><div class="inp is-error">anna@school</div><span class="row cap" style="gap:4px;color:var(--color-error)"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></svg>Введите адрес полностью</span></div></div></div></div>
+<div class="divider"></div>
+<div class="col" style="gap:12px"><span class="lbl">Вкладка</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Активная</span><div class="tabs"><div class="tab on">Уроки</div></div></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Обычная</span><div class="tabs"><div class="tab">Уроки</div></div></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Hover</span><div class="tabs"><div class="tab" style="color:var(--color-text)">Уроки</div></div></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><div class="tabs"><div class="tab on is-focus">Уроки</div></div></div></div></div>
+<div class="col" style="gap:12px"><span class="lbl">Слово в банке / оценка</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Обычное</span><span class="chip">have been</span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Hover</span><span class="chip is-hover">have been</span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><span class="chip is-focus">have been</span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Использовано</span><span class="chip used">have been</span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Выбрано</span><span class="chip on" style="width:48px;justify-content:center">5</span></div></div></div>
+<div class="col" style="gap:12px"><span class="lbl">Ячейка ответа</span><div class="row" style="gap:24px;align-items:flex-start;flex-wrap:wrap"><div class="col" style="gap:8px;min-width:140px"><span class="cap">Пустая</span><span class="cell c-empty"></span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Выбрана</span><span class="cell c-sel">have been</span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Focus-visible</span><span class="cell c-empty is-focus"></span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Верно</span><span class="cell c-ok"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>have been</span></div><div class="col" style="gap:8px;min-width:140px"><span class="cap">Неверно</span><span class="cell c-bad"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg><s>has gone</s></span></div></div></div>
+</div></main></body></html>

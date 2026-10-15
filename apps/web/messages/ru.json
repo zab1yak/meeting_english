@@ -2,5 +2,30 @@
   "home": {
     "title": "{appName}",
     "subtitle": "Платформа онлайн-уроков английского. Каркас проекта готов."
+  },
+  "ui": {
+    "close": "Закрыть",
+    "progress": "Прогресс",
+    "progressOf": "Прогресс: {title}",
+    "progressValue": "{done} из {total}",
+    "openLesson": "Открыть урок",
+    "lessonMeta": "{number} · {level}"
+  },
+  "status": {
+    "assigned": "Назначено",
+    "submitted": "Сдано",
+    "checked": "Проверено",
+    "overdue": "Просрочено"
+  },
+  "answer": {
+    "empty": "Пропуск {index}: пусто",
+    "selected": "Пропуск {index}: {word}, выбран",
+    "selectedEmpty": "Пропуск {index}: пусто, выбран",
+    "correct": "Пропуск {index}: {word} — верно",
+    "incorrect": "Пропуск {index}: {word} — неверно"
+  },
+  "designSystem": {
+    "title": "Дизайн-система",
+    "subtitle": "Токены и базовые компоненты Meeting English."
   }
 }

@@ -1,3 +1,79 @@
 @import 'tailwindcss';
 
-/* Дизайн-токены появятся в задаче 2 (Figma → @theme). */
+/*
+ * Дизайн-токены Meeting English. Источник: Figma Variables (коллекции Colors, Spacing, Radius)
+ * и HTML-макеты design/mockups. Значения цветов живут только здесь; в компонентах — утилиты
+ * Tailwind (bg-surface, text-muted-text, border-border…) или var(--color-*).
+ * Контраст пар текст/фон проверяет app/tokens.test.ts.
+ */
+/* static: все переменные попадают в :root, даже если ни одна утилита их не использует
+   (иначе var(--color-accent) в инлайн-стилях оказывается пустым). */
+@theme static {
+  /* Стандартная палитра Tailwind отключена: в интерфейсе только роли ниже. */
+  --color-*: initial;
+
+  --color-bg: #f6f7f8; /* фон страницы */
+  --color-surface: #ffffff; /* карточки, панели */
+  --color-text: #20212b; /* основной текст */
+  --color-muted-text: #696c60; /* второстепенный текст */
+  --color-muted-icon: #73766a; /* только иконки, не текст */
+  --color-primary: #2d4354; /* кнопки, ссылки, шапка */
+  --color-primary-hover: #233645; /* hover основной кнопки */
+  --color-on-primary: #ffffff; /* текст и иконки на primary, dark, accent */
+  --color-primary-tint: #eaeef1; /* hover вторичных элементов, выбранное */
+  --color-accent: #9e6752; /* только фон под белым текстом */
+  --color-highlight: #fed7a5; /* только фон плашек */
+  --color-dark: #534145; /* футер, тёмные блоки */
+  --color-success: #1f7a3a;
+  --color-success-tint: #eaf4ec;
+  --color-error: #b42318;
+  --color-error-tint: #fbedeb;
+  --color-border: #e3e5e8; /* границы карточек, разделители */
+  --color-border-strong: #8c8f95; /* граница полей ввода (3:1) */
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Типографика: H1/H2/H3/Body/Label/Caption → text-h1 … text-caption. */
+  --text-h1: 32px;
+  --text-h1--line-height: 40px;
+  --text-h1--letter-spacing: -0.5px;
+  --text-h1--font-weight: 600;
+  --text-h2: 24px;
+  --text-h2--line-height: 32px;
+  --text-h2--letter-spacing: -0.3px;
+  --text-h2--font-weight: 600;
+  --text-h3: 18px;
+  --text-h3--line-height: 26px;
+  --text-h3--font-weight: 600;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+  --text-label--font-weight: 500;
+  --text-caption: 13px;
+  --text-caption--line-height: 18px;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  /* Кольцо фокуса с клавиатуры: 2px primary с отступом 2px. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}

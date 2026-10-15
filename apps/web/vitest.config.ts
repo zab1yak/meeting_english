@@ -7,7 +7,7 @@ export default defineConfig({
     alias: { '@': path.resolve(import.meta.dirname) },
   },
   test: {
-    include: ['**/*.test.ts'],
+    include: ['**/*.test.{ts,tsx}'],
     exclude: ['node_modules/**', '.next/**'],
   },
 });

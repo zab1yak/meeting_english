@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts",
+    "./testing-setup": "./src/testing-setup.ts"
   },
   "scripts": {
     "generate": "prisma generate",
@@ -12,7 +14,8 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
@@ -23,6 +26,7 @@
     "@me/config": "workspace:*",
     "@types/pg": "^8.23.1",
     "dotenv": "^18.0.7",
-    "prisma": "7.10.0"
+    "prisma": "7.10.0",
+    "vitest": "^5.0.3"
   }
 }

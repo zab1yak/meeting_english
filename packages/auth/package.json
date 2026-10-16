@@ -1,0 +1,23 @@
+{
+  "name": "@me/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@me/db": "workspace:*",
+    "@me/shared": "workspace:*",
+    "@node-rs/argon2": "^2.2.2"
+  },
+  "devDependencies": {
+    "@me/config": "workspace:*",
+    "vitest": "^5.0.3"
+  }
+}

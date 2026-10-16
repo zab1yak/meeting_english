@@ -1,4 +1,12 @@
-// Полная схема появится в задаче 3 (User, Course, Lesson, Block, ...).
+// Схема Meeting English.
+//
+// Ограничения, которых не видно в этом файле (заданы SQL в миграции init):
+// - User.email хранится только в нижнем регистре (CHECK email = lower(email));
+// - LessonSnapshot неизменяем: UPDATE запрещён триггером;
+// - у учителя не больше одной LiveSession со статусом ACTIVE (частичный unique).
+//
+// Секретные поля (Block.answerKey, LessonSnapshot.answerKeys, User.passwordHash)
+// скрыты глобальным omit в createPrismaClient и читаются только явно.
 
 generator client {
   provider = "prisma-client"
@@ -9,7 +17,339 @@ datasource db {
   provider = "postgresql"
 }
 
-// Заглушка: Prisma не генерирует клиент без моделей. Удаляется в задаче 3.
-model SchemaPlaceholder {
-  id Int @id @default(autoincrement())
+enum Role {
+  TEACHER
+  STUDENT
+}
+
+enum BlockType {
+  TEXT
+  IMAGE
+  AUDIO
+  GAP_SELECT
+  GAP_INPUT
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  TRUE_FALSE
+  MATCH_PAIRS
+  ORDER_WORDS
+}
+
+enum LiveSessionStatus {
+  ACTIVE
+  ENDED
+}
+
+enum AttemptKind {
+  PRACTICE
+  LIVE
+  HOMEWORK
+}
+
+enum MediaKind {
+  IMAGE
+  AUDIO
+}
+
+// ─── Пользователи и доступ ────────────────────────────────────────────────
+
+model User {
+  id                 String    @id @default(uuid(7)) @db.Uuid
+  /// Нормализован: trim + lower.
+  email              String    @unique
+  /// argon2id в PHC-формате.
+  passwordHash       String
+  name               String
+  role               Role
+  /// Пароль выдан учителем при сбросе — после входа его нужно сменить.
+  mustChangePassword Boolean   @default(false)
+  passwordChangedAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  sessions         AuthSession[]
+  students         TeacherStudent[]         @relation("TeacherOfStudent")
+  teachers         TeacherStudent[]         @relation("StudentOfTeacher")
+  invitesCreated   Invite[]                 @relation("InviteTeacher")
+  invitesUsed      Invite[]                 @relation("InviteStudent")
+  courses          Course[]
+  liveSessions     LiveSession[]
+  participations   LiveSessionParticipant[]
+  attempts         Attempt[]                @relation("AttemptStudent")
+  teacherAttempts  Attempt[]                @relation("AttemptTeacher")
+  homeworkAssigned Homework[]               @relation("HomeworkTeacher")
+  homeworkReceived Homework[]               @relation("HomeworkStudent")
+  comments         Comment[]
+  mediaFiles       MediaFile[]
+}
+
+model AuthSession {
+  /// sha256(token) в hex; сам токен живёт только в cookie.
+  id        String   @id
+  userId    String   @db.Uuid
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  ip        String?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model TeacherStudent {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  teacherId String   @db.Uuid
+  studentId String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  teacher User @relation("TeacherOfStudent", fields: [teacherId], references: [id], onDelete: Cascade)
+  student User @relation("StudentOfTeacher", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, studentId])
+  @@index([studentId])
+}
+
+model Invite {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  /// sha256(token) в hex; сам токен есть только в ссылке.
+  tokenHash String    @unique
+  teacherId String    @db.Uuid
+  expiresAt DateTime
+  usedAt    DateTime?
+  usedById  String?   @db.Uuid
+  createdAt DateTime  @default(now())
+
+  teacher User  @relation("InviteTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  usedBy  User? @relation("InviteStudent", fields: [usedById], references: [id], onDelete: SetNull)
+
+  @@index([teacherId, createdAt])
+  @@index([usedById])
+}
+
+// ─── Контент ──────────────────────────────────────────────────────────────
+
+model Course {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  ownerId   String   @db.Uuid
+  title     String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([ownerId, position])
+}
+
+model Lesson {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  courseId  String   @db.Uuid
+  title     String
+  position  Int
+  /// Оптимистичная блокировка автосохранения: UPDATE … WHERE version = ?.
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  blocks    Block[]
+  snapshots LessonSnapshot[]
+
+  @@index([courseId, position])
+}
+
+model Block {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  lessonId      String    @db.Uuid
+  type          BlockType
+  position      Int
+  schemaVersion Int       @default(1)
+  /// Публичная часть: уходит ученику.
+  content       Json
+  /// Ключ ответов: ученику не уходит никогда.
+  answerKey     Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId, position])
+}
+
+/// Неизменяемый снимок урока для класса и ДЗ: проверка ответов идёт по нему.
+model LessonSnapshot {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  /// null — исходный урок удалён, снимок остаётся для истории ДЗ.
+  lessonId      String?  @db.Uuid
+  lessonVersion Int
+  /// Блоки без ключей (публичные части).
+  blocks        Json
+  /// Ключи по id блока, как Block.answerKey.
+  answerKeys    Json
+  createdAt     DateTime @default(now())
+
+  lesson       Lesson?       @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  liveSessions LiveSession[]
+  attempts     Attempt[]
+  homework     Homework[]
+
+  @@unique([lessonId, lessonVersion])
+}
+
+// ─── Живой класс ──────────────────────────────────────────────────────────
+
+model LiveSession {
+  id             String            @id @default(uuid(7)) @db.Uuid
+  teacherId      String            @db.Uuid
+  snapshotId     String            @db.Uuid
+  status         LiveSessionStatus @default(ACTIVE)
+  followMode     Boolean           @default(false)
+  currentBlockId String?
+  lockedBlockIds String[]          @default([])
+  /// Номер последнего события комнаты.
+  seq            Int               @default(0)
+  startedAt      DateTime          @default(now())
+  endedAt        DateTime?
+
+  teacher      User                     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  snapshot     LessonSnapshot           @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  participants LiveSessionParticipant[]
+  attempts     Attempt[]
+
+  @@index([teacherId, status])
+  @@index([snapshotId])
+}
+
+model LiveSessionParticipant {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  liveSessionId String   @db.Uuid
+  studentId     String   @db.Uuid
+  joinedAt      DateTime @default(now())
+
+  liveSession LiveSession @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+  student     User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([liveSessionId, studentId])
+  @@index([studentId])
+}
+
+// ─── Попытки и ответы ─────────────────────────────────────────────────────
+
+/// Общая сущность для самостоятельного прохождения, класса и ДЗ.
+model Attempt {
+  id            String      @id @default(uuid(7)) @db.Uuid
+  studentId     String      @db.Uuid
+  /// Денормализация для фильтров кабинета учителя; null у самостоятельной практики.
+  teacherId     String?     @db.Uuid
+  snapshotId    String      @db.Uuid
+  kind          AttemptKind
+  liveSessionId String?     @db.Uuid
+  homeworkId    String?     @db.Uuid
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  student     User                @relation("AttemptStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher     User?               @relation("AttemptTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  snapshot    LessonSnapshot      @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  liveSession LiveSession?        @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+  homework    Homework?           @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  answers     StudentAnswer[]
+  submission  HomeworkSubmission?
+
+  @@unique([liveSessionId, studentId])
+  @@unique([homeworkId, studentId])
+  @@index([studentId, kind, createdAt])
+  @@index([teacherId, createdAt])
+  @@index([snapshotId])
+}
+
+model StudentAnswer {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  attemptId String    @db.Uuid
+  /// id блока внутри снимка (не FK: блок урока мог измениться или удалиться).
+  blockId   String
+  itemId    String
+  value     Json
+  isCorrect Boolean
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  resetAt   DateTime?
+
+  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, blockId, itemId])
+}
+
+// ─── Домашние задания ─────────────────────────────────────────────────────
+
+/// Статус «просрочено» вычисляется из dueAt и submission, не хранится.
+model Homework {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  teacherId  String    @db.Uuid
+  studentId  String    @db.Uuid
+  snapshotId String    @db.Uuid
+  dueAt      DateTime?
+  createdAt  DateTime  @default(now())
+
+  teacher    User                @relation("HomeworkTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  student    User                @relation("HomeworkStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  snapshot   LessonSnapshot      @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  attempts   Attempt[]
+  submission HomeworkSubmission?
+
+  @@index([studentId, dueAt])
+  @@index([teacherId, dueAt])
+  @@index([snapshotId])
+}
+
+model HomeworkSubmission {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  homeworkId  String    @unique @db.Uuid
+  attemptId   String    @unique @db.Uuid
+  submittedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  /// Оценка учителя 2–5.
+  grade       Int?
+  /// Процент верных ответов 0–100.
+  score       Int?
+
+  homework Homework  @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  attempt  Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  comments Comment[]
+}
+
+model Comment {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  authorId     String   @db.Uuid
+  submissionId String   @db.Uuid
+  /// null — комментарий ко всей работе.
+  blockId      String?
+  body         String
+  createdAt    DateTime @default(now())
+
+  author     User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  submission HomeworkSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, createdAt])
+  @@index([authorId])
+}
+
+// ─── Файлы ────────────────────────────────────────────────────────────────
+
+model MediaFile {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  ownerId    String    @db.Uuid
+  storageKey String    @unique
+  mime       String
+  size       Int
+  kind       MediaKind
+  createdAt  DateTime  @default(now())
+
+  /// Restrict: файл в хранилище удаляется отдельной задачей очистки.
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId, createdAt])
 }

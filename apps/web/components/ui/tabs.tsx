@@ -56,7 +56,12 @@ export function Tabs({ items, label, defaultValue, className }: TabsProps) {
 
   return (
     <div className={className}>
-      <div role="tablist" aria-label={label} className="flex gap-1 border-b border-border">
+      {/* На узком экране вкладки прокручиваются, а не растягивают страницу. */}
+      <div
+        role="tablist"
+        aria-label={label}
+        className="flex gap-1 overflow-x-auto border-b border-border"
+      >
         {items.map((item, index) => {
           const selected = index === active;
           return (

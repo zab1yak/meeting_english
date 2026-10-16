@@ -35,6 +35,20 @@ services:
       timeout: 3s
       retries: 10
 
+  # Разовый запуск миграций до старта приложений: в runtime-образах нет prisma CLI,
+  # а web и realtime не должны мигрировать одновременно.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: build
+    environment:
+      <<: *db-env
+    command: ['pnpm', '--filter', '@me/db', 'migrate:deploy']
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   realtime:
     build:
       context: .
@@ -46,8 +60,8 @@ services:
     ports:
       - '127.0.0.1:${REALTIME_PORT:-3001}:3001'
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
 
@@ -60,11 +74,12 @@ services:
     environment:
       <<: *db-env
       REDIS_URL: redis://redis:6379
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
     ports:
       - '127.0.0.1:${WEB_PORT:-3000}:3000'
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
 

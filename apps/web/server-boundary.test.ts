@@ -9,7 +9,9 @@ import { describe, expect, it } from 'vitest';
  * (lib/server защищён ещё и пакетом server-only, но @me/db и @me/auth — нет:
  * их использует realtime, где server-only недоступен.)
  */
-const SERVER_ONLY = /from\s+['"](@me\/db|@me\/auth|@\/lib\/server)(\/[^'"]*)?['"]/;
+// import … from, export … from, import 'x' (побочный импорт) и динамический import('x').
+const SERVER_ONLY =
+  /(?:from\s+|import\s*\(?\s*)['"](@me\/db|@me\/auth|@\/lib\/server)(\/[^'"]*)?['"]/;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

@@ -10,8 +10,8 @@ import { resetStudentPasswordAction, type ResetPasswordState } from './actions';
 type Props = { studentId: string; studentName: string };
 
 export function ResetPasswordButton({ studentId, studentName }: Props) {
-  const [state, action, pending] = useActionState<ResetPasswordState>(
-    () => resetStudentPasswordAction(studentId),
+  const [state, action, pending] = useActionState<ResetPasswordState, FormData>(
+    resetStudentPasswordAction.bind(null, studentId),
     {},
   );
 

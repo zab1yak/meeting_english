@@ -1,7 +1,7 @@
-import type { Db, DbTx } from '@me/db';
+import { inTransaction, type Db, type DbTx } from '@me/db';
 import { acceptInviteInputSchema, type AcceptInviteInput } from '@me/shared';
 
-import { isUniqueViolation, publicUserSelect, type PublicUser } from './accounts';
+import { isEmailTaken, publicUserSelect, type PublicUser } from './accounts';
 import { hashPassword } from './password';
 import { err, type Result } from './result';
 import { generateToken, hashToken } from './token';
@@ -69,7 +69,7 @@ export async function acceptInviteAsNewStudent(
   const passwordHash = await hashPassword(password);
 
   try {
-    return await db.$transaction(async (tx) => {
+    return await inTransaction(db, async (tx) => {
       const invite = await claimInvite(tx, token, now);
       if (!invite) return err('INVITE_INVALID');
       const user = await tx.user.create({
@@ -84,7 +84,7 @@ export async function acceptInviteAsNewStudent(
     });
   } catch (error) {
     // Транзакция откатилась целиком — приглашение снова действует.
-    if (isUniqueViolation(error)) return err('EMAIL_TAKEN');
+    if (isEmailTaken(error)) return err('EMAIL_TAKEN');
     throw error;
   }
 }
@@ -99,14 +99,23 @@ export async function acceptInviteAsExistingStudent(
   const student = await db.user.findUnique({ where: { id: studentId }, select: { role: true } });
   if (student?.role !== 'STUDENT') return err('FORBIDDEN');
 
-  return db.$transaction(async (tx) => {
-    const invite = await claimInvite(tx, token, now);
-    if (!invite) return err('INVITE_INVALID');
+  // Ученик уже у этого учителя: приглашение не тратим — его мог получить другой ученик.
+  const invite = await findInvite(db, token, now);
+  if (!invite) return err('INVITE_INVALID');
+  const linked = await db.teacherStudent.findUnique({
+    where: { teacherId_studentId: { teacherId: invite.teacherId, studentId } },
+    select: { id: true },
+  });
+  if (linked) return { ok: true };
+
+  return inTransaction(db, async (tx) => {
+    const claimed = await claimInvite(tx, token, now);
+    if (!claimed) return err('INVITE_INVALID');
     await tx.teacherStudent.createMany({
-      data: [{ teacherId: invite.teacherId, studentId }],
+      data: [{ teacherId: claimed.teacherId, studentId }],
       skipDuplicates: true,
     });
-    await tx.invite.update({ where: { id: invite.id }, data: { usedById: studentId } });
+    await tx.invite.update({ where: { id: claimed.id }, data: { usedById: studentId } });
     return { ok: true as const };
   });
 }

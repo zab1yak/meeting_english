@@ -1,11 +1,14 @@
 import type { Db } from '@me/db';
 
+import { isUuid } from './ids';
+
 /** Учитель ведёт этого ученика: есть связь, и роли у обоих правильные. */
 export async function isTeacherOfStudent(
   db: Db,
   teacherId: string,
   studentId: string,
 ): Promise<boolean> {
+  if (!isUuid(teacherId) || !isUuid(studentId)) return false;
   const count = await db.teacherStudent.count({
     where: { teacherId, studentId, teacher: { role: 'TEACHER' }, student: { role: 'STUDENT' } },
   });

@@ -1,4 +1,4 @@
-import type { Db, DbTx, Role } from '@me/db';
+import { inTransaction, type Db, type DbTx, type Role } from '@me/db';
 
 import { SESSION_IDLE_TTL_MS, isSessionExpired, nextSessionExpiry } from './policy';
 import { generateToken, hashToken } from './token';
@@ -32,7 +32,12 @@ export async function createSession(
   const token = generateToken();
   const expiresAt = new Date(now.getTime() + SESSION_IDLE_TTL_MS);
 
-  await db.$transaction(async (tx) => {
+  await inTransaction(db, async (tx) => {
+    // Входы одного пользователя выполняются по очереди: иначе параллельные транзакции
+    // увидели бы одинаковое число сессий и вместе превысили лимит.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${userId}, 0))`;
+    // Заодно убираем истёкшие сессии пользователя — общая чистка таблицы будет по расписанию.
+    await tx.authSession.deleteMany({ where: { userId, expiresAt: { lte: now } } });
     const overflow = await tx.authSession.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -100,7 +105,7 @@ export async function revokeSession(db: Db, token: string): Promise<void> {
 
 /** Отзывает все сессии пользователя (смена или сброс пароля). */
 export async function revokeAllSessions(
-  db: Db | DbTx,
+  db: DbTx,
   userId: string,
   { exceptSessionId }: { exceptSessionId?: string } = {},
 ): Promise<void> {

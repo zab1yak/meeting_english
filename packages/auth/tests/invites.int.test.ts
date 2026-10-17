@@ -160,7 +160,7 @@ describeWithDb('приглашения и права', () => {
       expect(await isTeacherOfStudent(db, first.id, student.id)).toBe(true);
     });
 
-    it('повторная привязка к тому же учителю не падает и гасит приглашение', async () => {
+    it('уже привязанный ученик не тратит приглашение: оно остаётся для настоящего адресата', async () => {
       const teacher = await createUser(db, 'TEACHER');
       const student = await createUser(db, 'STUDENT');
       await db.teacherStudent.create({ data: { teacherId: teacher.id, studentId: student.id } });
@@ -171,7 +171,7 @@ describeWithDb('приглашения и права', () => {
         ok: true,
       });
       expect(await db.teacherStudent.count()).toBe(1);
-      expect(await findInvite(db, invite.token, t0)).toBeNull();
+      expect(await findInvite(db, invite.token, t0)).not.toBeNull();
     });
 
     it('учитель по приглашению не привязывается — FORBIDDEN, приглашение не тратится', async () => {
@@ -211,6 +211,11 @@ describeWithDb('приглашения и права', () => {
       expect(await isTeacherOfStudent(db, teacher.id, student.id)).toBe(true);
       expect(await isTeacherOfStudent(db, teacher.id, stranger.id)).toBe(false);
       expect(await isTeacherOfStudent(db, student.id, teacher.id)).toBe(false);
+    });
+
+    it('isTeacherOfStudent: id не в формате uuid — false, а не ошибка БД', async () => {
+      const teacher = await createUser(db, 'TEACHER');
+      expect(await isTeacherOfStudent(db, teacher.id, 'not-a-uuid')).toBe(false);
     });
 
     it('listStudents возвращает только своих учеников, без секретов, по имени', async () => {

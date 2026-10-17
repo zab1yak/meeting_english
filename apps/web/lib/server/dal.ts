@@ -28,6 +28,7 @@ export async function requireUser(requirement: Requirement = {}): Promise<Sessio
   const user = await getCurrentUser();
   const decision = accessDecision(user, requirement);
   if (!decision.allow) redirect(decision.redirectTo);
+  // accessDecision уже отправил анонима на вход; строка нужна TypeScript для сужения user.
   if (!user) redirect('/login');
   return user;
 }

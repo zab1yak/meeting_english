@@ -12,11 +12,14 @@ export async function readSessionToken(): Promise<string> {
   return (await cookies()).get(cookieConfig.name)?.value ?? '';
 }
 
-/** IP и браузер для списка сессий. За Caddy адрес клиента — первый в X-Forwarded-For. */
+/**
+ * IP и браузер для списка сессий. Первый элемент X-Forwarded-For задаёт клиент,
+ * поэтому берём X-Real-IP или последний элемент — его дописывает наш прокси (Caddy).
+ */
 async function requestMeta() {
   const list = await headers();
-  const forwarded = list.get('x-forwarded-for')?.split(',')[0]?.trim();
-  return { ip: forwarded ?? list.get('x-real-ip'), userAgent: list.get('user-agent') };
+  const forwarded = list.get('x-forwarded-for')?.split(',').at(-1)?.trim();
+  return { ip: list.get('x-real-ip') ?? forwarded, userAgent: list.get('user-agent') };
 }
 
 /**

@@ -107,8 +107,8 @@ export async function acceptInviteAction(
   redirect('/student');
 }
 
-/** Уже вошедший ученик принимает приглашение ещё одного учителя. */
-export async function joinTeacherAction(token: string): Promise<FormState> {
+/** Уже вошедший ученик принимает приглашение ещё одного учителя. Вызывается через bind(null, token). */
+export async function joinTeacherAction(token: string, _prev: FormState): Promise<FormState> {
   const student = await requireStudent();
   const result = await acceptInviteAsExistingStudent(getDb(), token, student.id);
   if (!result.ok) return { error: t('auth', 'inviteInvalid') };
@@ -137,8 +137,13 @@ export async function changePasswordAction(
       : { error: t('auth', 'genericError') };
   }
 
-  // Смена пароля отозвала все сессии, включая эту, — открываем новую.
-  await startSession(user.id);
+  // Смена пароля отозвала все сессии, включая эту, — открываем новую. Если не вышло,
+  // пароль уже сменён: отправляем на вход, а не показываем ошибку при рабочем пароле.
+  try {
+    await startSession(user.id);
+  } catch {
+    redirect('/login');
+  }
   redirect(homePathFor(user.role));
 }
 

@@ -143,6 +143,34 @@ describeWithDb('аккаунты', () => {
       ).not.toBeNull();
     });
 
+    it('у ученика несколько учителей — SHARED_STUDENT: один учитель не захватит общий аккаунт', async () => {
+      const teacherA = await createUser(db, 'TEACHER');
+      const teacherB = await createUser(db, 'TEACHER');
+      const student = await createUser(db, 'STUDENT', { password: 'student-pass' });
+      await db.teacherStudent.createMany({
+        data: [
+          { teacherId: teacherA.id, studentId: student.id },
+          { teacherId: teacherB.id, studentId: student.id },
+        ],
+      });
+
+      expect(await resetStudentPassword(db, teacherB.id, student.id)).toEqual({
+        ok: false,
+        code: 'SHARED_STUDENT',
+      });
+      expect(
+        await authenticate(db, { email: student.email, password: 'student-pass' }),
+      ).not.toBeNull();
+    });
+
+    it('id ученика не в формате uuid — FORBIDDEN, а не ошибка БД', async () => {
+      const teacher = await createUser(db, 'TEACHER');
+      expect(await resetStudentPassword(db, teacher.id, 'not-a-uuid')).toEqual({
+        ok: false,
+        code: 'FORBIDDEN',
+      });
+    });
+
     it('учителю (не ученику) через эту функцию сбросить нельзя, даже при связи', async () => {
       const teacher = await createUser(db, 'TEACHER');
       const otherTeacher = await createUser(db, 'TEACHER');

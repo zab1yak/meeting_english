@@ -1,4 +1,4 @@
-import { Prisma, type Db, type Role } from '@me/db';
+import { Prisma, inTransaction, type Db, type Role } from '@me/db';
 import {
   changePasswordInputSchema,
   loginInputSchema,
@@ -8,6 +8,7 @@ import {
   type RegisterTeacherInput,
 } from '@me/shared';
 
+import { isUuid } from './ids';
 import { generateTempPassword, hashPassword, verifyPassword } from './password';
 import { err, type Result } from './result';
 import { revokeAllSessions } from './sessions';
@@ -28,8 +29,17 @@ export const publicUserSelect = {
   mustChangePassword: true,
 } as const;
 
-export function isUniqueViolation(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+/**
+ * Нарушение уникальности User.email. Другие P2002 (например, гонка на связи
+ * учитель–ученик) не должны превращаться в «почта занята».
+ * С адаптером pg в meta приходит имя ограничения, без адаптера — список полей.
+ */
+export function isEmailTaken(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+    return false;
+  }
+  const meta = JSON.stringify(error.meta ?? {});
+  return meta.includes('User_email_key') || meta.includes('"email"');
 }
 
 /** Регистрация открыта только учителям; ученики приходят по приглашению. */
@@ -48,7 +58,7 @@ export async function registerTeacher(
     });
     return { ok: true, user };
   } catch (error) {
-    if (isUniqueViolation(error)) return err('EMAIL_TAKEN');
+    if (isEmailTaken(error)) return err('EMAIL_TAKEN');
     throw error;
   }
 }
@@ -92,7 +102,7 @@ export async function changePassword(
   }
 
   const passwordHash = await hashPassword(parsed.data.newPassword);
-  await db.$transaction(async (tx) => {
+  await inTransaction(db, async (tx) => {
     await tx.user.update({
       where: { id: userId },
       data: { passwordHash, mustChangePassword: false, passwordChangedAt: now },
@@ -105,13 +115,17 @@ export async function changePassword(
 /**
  * Сброс пароля ученику его учителем (почты в MVP нет). Учитель получает временный
  * пароль один раз; ученик обязан сменить его после входа. Все сессии ученика отзываются.
+ *
+ * Только единственный учитель ученика: иначе любой из нескольких учителей мог бы
+ * войти в общий аккаунт и увидеть работы у других учителей (SHARED_STUDENT).
  */
 export async function resetStudentPassword(
   db: Db,
   teacherId: string,
   studentId: string,
   now: Date = new Date(),
-): Promise<Result<{ tempPassword: string }, 'FORBIDDEN'>> {
+): Promise<Result<{ tempPassword: string }, 'FORBIDDEN' | 'SHARED_STUDENT'>> {
+  if (!isUuid(teacherId) || !isUuid(studentId)) return err('FORBIDDEN');
   const link = await db.teacherStudent.findUnique({
     where: { teacherId_studentId: { teacherId, studentId } },
     select: { teacher: { select: { role: true } }, student: { select: { role: true } } },
@@ -119,10 +133,13 @@ export async function resetStudentPassword(
   if (link?.teacher.role !== 'TEACHER' || link.student.role !== 'STUDENT') {
     return err('FORBIDDEN');
   }
+  if ((await db.teacherStudent.count({ where: { studentId } })) > 1) {
+    return err('SHARED_STUDENT');
+  }
 
   const tempPassword = generateTempPassword();
   const passwordHash = await hashPassword(tempPassword);
-  await db.$transaction(async (tx) => {
+  await inTransaction(db, async (tx) => {
     await tx.user.update({
       where: { id: studentId },
       data: { passwordHash, mustChangePassword: true, passwordChangedAt: now },

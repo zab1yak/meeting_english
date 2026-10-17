@@ -133,6 +133,29 @@ describeWithDb('сессии', () => {
     expect(await validateSession(db, tokens.at(-1) ?? '', t0)).not.toBeNull();
   });
 
+  it('при входе истёкшие сессии пользователя удаляются', async () => {
+    const user = await createUser(db, 'TEACHER');
+    const old = await createSession(db, user.id, {}, t0);
+
+    await createSession(db, user.id, {}, at(31));
+
+    expect(await db.authSession.count({ where: { userId: user.id } })).toBe(1);
+    expect(await db.authSession.findUnique({ where: { id: hashToken(old.token) } })).toBeNull();
+  });
+
+  it('параллельные входы не превышают лимит сессий', async () => {
+    const user = await createUser(db, 'TEACHER');
+    for (let i = 0; i < MAX_SESSIONS_PER_USER - 1; i++) {
+      await createSession(db, user.id, {}, new Date(t0.getTime() + i * 1000));
+    }
+
+    await Promise.all(
+      [0, 1, 2].map((i) => createSession(db, user.id, {}, new Date(t0.getTime() + 60_000 + i))),
+    );
+
+    expect(await db.authSession.count({ where: { userId: user.id } })).toBe(MAX_SESSIONS_PER_USER);
+  });
+
   it('длинный ip и user-agent обрезаются, а не роняют вход', async () => {
     const user = await createUser(db, 'TEACHER');
     await createSession(db, user.id, { ip: '9'.repeat(200), userAgent: 'x'.repeat(5000) }, t0);

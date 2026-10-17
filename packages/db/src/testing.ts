@@ -24,7 +24,13 @@ export const describeWithDb = testDatabaseUrl ? describe : describe.skip;
 
 export function createTestDb(): Db {
   if (!testDatabaseUrl) throw new Error('TEST_DATABASE_URL не задан');
-  const max = Number(process.env['TEST_DATABASE_POOL'] ?? '5');
+  // Защита от опечатки в .env: тесты очищают таблицы, рабочую БД трогать нельзя.
+  // В CI база одноразовая, и одна и та же URL допустима.
+  if (!process.env['CI'] && testDatabaseUrl === process.env['DATABASE_URL']) {
+    throw new Error('TEST_DATABASE_URL совпадает с DATABASE_URL: тесты стёрли бы рабочие данные');
+  }
+  const pool = Number(process.env['TEST_DATABASE_POOL'] ?? '5');
+  const max = Number.isInteger(pool) && pool > 0 ? pool : 5;
   return createPrismaClient(testDatabaseUrl, { maxConnections: max });
 }
 

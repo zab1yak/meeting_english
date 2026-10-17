@@ -20,7 +20,11 @@ let dummyHash: Promise<string> | undefined;
  * чтобы время ответа не выдавало, зарегистрирован ли email.
  */
 export async function verifyPassword(passwordHash: string | null, password: string) {
-  dummyHash ??= hashPassword('dummy-password-for-timing');
+  dummyHash ??= hashPassword('dummy-password-for-timing').catch((error: unknown) => {
+    // Не кэшируем отказ навсегда: следующий вход попробует посчитать хэш снова.
+    dummyHash = undefined;
+    throw error;
+  });
   const target = passwordHash ?? (await dummyHash);
   try {
     const valid = await verify(target, password);

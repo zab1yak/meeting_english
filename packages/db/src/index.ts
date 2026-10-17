@@ -29,8 +29,17 @@ export function createPrismaClient(
 
 /** Клиент с глобальным omit секретных полей. */
 export type Db = ReturnType<typeof createPrismaClient>;
-/** Клиент внутри `db.$transaction(async (tx) => …)`. */
-export type DbTx = Parameters<Parameters<Db['$transaction']>[0]>[0];
+
+/**
+ * Клиент внутри транзакции — с тем же omit. Сгенерированный `$transaction` типизирует
+ * свой аргумент как клиент без omit, и типы врали бы, что секретные поля в результате есть.
+ */
+export type DbTx = Omit<Db, '$connect' | '$disconnect' | '$on' | '$use' | '$extends'>;
+
+/** Интерактивная транзакция с типами DbTx. Используйте вместо `db.$transaction(fn)`. */
+export function inTransaction<R>(db: Db, fn: (tx: DbTx) => Promise<R>): Promise<R> {
+  return db.$transaction((tx) => fn(tx as DbTx));
+}
 
 export { Prisma } from './generated/prisma/client';
 export * from './generated/prisma/enums';
